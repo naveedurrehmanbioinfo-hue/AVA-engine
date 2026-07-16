@@ -40,17 +40,22 @@ def retrieve(db: Session, query: str, collection: str = "default", k: int | None
         LIMIT :k
     """), {"qv": vec_literal, "coll": collection, "k": settings.retrieve_k}).mappings().all()
 
-    # Full-text arm — websearch_to_tsquery + ts_rank.
+    # Full-text arm — websearch_to_tsquery + ts_rank. Carries the same cosine
+    # similarity as the vector arm: downstream applies a min_similarity floor,
+    # and leaving it unset here would silently drop every keyword-only hit,
+    # reducing hybrid search to vector-only.
     fts_rows = db.execute(text("""
         SELECT id, source_id, title, url, content,
                ts_rank(to_tsvector('english', content),
-                       websearch_to_tsquery('english', :q)) AS rank
+                       websearch_to_tsquery('english', :q)) AS rank,
+               1 - (embedding <=> CAST(:qv AS vector)) AS similarity
         FROM chunks
-        WHERE collection = :coll
+        WHERE collection = :coll AND embedding IS NOT NULL
           AND to_tsvector('english', content) @@ websearch_to_tsquery('english', :q)
         ORDER BY rank DESC
         LIMIT :k
-    """), {"q": query, "coll": collection, "k": settings.retrieve_k}).mappings().all()
+    """), {"q": query, "qv": vec_literal, "coll": collection,
+           "k": settings.retrieve_k}).mappings().all()
 
     # Reciprocal Rank Fusion.
     RRF_K = 60
@@ -62,6 +67,7 @@ def retrieve(db: Session, query: str, collection: str = "default", k: int | None
     for rank, row in enumerate(fts_rows):
         e = fused.setdefault(row["id"], {"row": row, "score": 0.0, "similarity": 0.0})
         e["score"] += 1.0 / (RRF_K + rank)
+        e["similarity"] = float(row["similarity"])
 
     ranked = sorted(fused.values(), key=lambda e: e["score"], reverse=True)[:k]
     return [
