@@ -3,7 +3,18 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 
 from .config import settings
 
-engine = create_engine(settings.database_url, pool_pre_ping=True, future=True)
+
+def _normalize_url(url: str) -> str:
+    """Accept plain postgres://... URLs (e.g. from Neon/Supabase) and force the
+    psycopg3 driver SQLAlchemy needs, without touching the local docker-compose URL."""
+    if url.startswith("postgres://"):
+        url = "postgresql://" + url[len("postgres://"):]
+    if url.startswith("postgresql://"):
+        url = "postgresql+psycopg://" + url[len("postgresql://"):]
+    return url
+
+
+engine = create_engine(_normalize_url(settings.database_url), pool_pre_ping=True, future=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False, future=True)
 Base = declarative_base()
 

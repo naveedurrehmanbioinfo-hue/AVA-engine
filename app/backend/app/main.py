@@ -23,7 +23,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "web")
+WEB_DIR = os.environ.get("AVA_WEB_DIR") or os.path.join(os.path.dirname(os.path.dirname(__file__)), "web")
 
 
 @app.on_event("startup")
