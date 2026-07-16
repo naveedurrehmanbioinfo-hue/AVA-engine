@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     spider_cloud_api_key: str = ""
 
     # Models
-    chat_model: str = "gpt-4o-mini"
+    chat_model: str = "gpt-5.5"
     embedding_model: str = "text-embedding-3-small"
     embedding_dim: int = 1536
 
