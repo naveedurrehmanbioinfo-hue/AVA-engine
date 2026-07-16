@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AVA Console — Grounded Knowledge Assistant</title>
-<link rel="icon" type="image/png" href="avatar-99xlab-ink.png">
+<link rel="icon" type="image/png" href="/web/avatar-99xlab-ink.png">
 <style>
 /* ============ AVA Console design tokens (from build spec mockup) ============ */
 :root{
@@ -234,7 +234,7 @@ td .m{font-size:11px;color:var(--slate)}
   <aside class="side">
     <div class="brand">
       <div class="product">
-        <img src="avatar-99xlab-ink.png" alt="99xlab" width="34" height="34" style="border-radius:8px">
+        <img src="/web/avatar-99xlab-ink.png" alt="99xlab" width="34" height="34" style="border-radius:8px">
         <div><b>AVA Console</b><span>Knowledge &amp; Insights Admin</span></div>
       </div>
     </div>
@@ -250,10 +250,10 @@ td .m{font-size:11px;color:var(--slate)}
     </nav>
     <div class="grow"></div>
     <div class="assist">
-      <img src="avatar-99xlab-ink.png" alt="99xlab" width="38" height="38" style="border-radius:8px">
+      <img src="/web/avatar-99xlab-ink.png" alt="99xlab" width="38" height="38" style="border-radius:8px">
       <small><b>Grounded-or-refused</b><br>Answers only from verified sources. Every fact is cited.</small>
     </div>
-    <div class="credit"><img src="sig-99xlab-gmail.gif" alt="99xlab" style="height:18px;margin-bottom:4px;display:block">Live MVP · Phase 1 grounding core<br>99xlab · AVA platform · 2026</div>
+    <div class="credit"><img src="/web/sig-99xlab-gmail.gif" alt="99xlab" style="height:18px;margin-bottom:4px;display:block">Live MVP · Phase 1 grounding core<br>99xlab · AVA platform · 2026</div>
   </aside>
 
   <!-- ============ MAIN ============ -->
@@ -311,7 +311,7 @@ td .m{font-size:11px;color:var(--slate)}
           <div class="chat-messages" id="chatMessages">
             <div class="chat-empty" id="chatEmpty">
               <div>
-                <img src="avatar-99xlab-ink.png" alt="AVA">
+                <img src="/web/avatar-99xlab-ink.png" alt="AVA">
                 <h3>Ask AVA anything</h3>
                 <p>Grounded answers from your knowledge base. Every fact is cited, every gap is refused honestly.</p>
               </div>
@@ -462,7 +462,7 @@ td .m{font-size:11px;color:var(--slate)}
 <!-- drawer for a conversation transcript -->
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer" aria-label="Conversation detail">
-  <div class="dh"><img src="avatar-99xlab-ink.png" alt="99xlab" width="28" height="28" style="border-radius:6px"><div><b style="font-size:13px">Conversation</b><div class="sub" id="dwhen"></div></div>
+  <div class="dh"><img src="/web/avatar-99xlab-ink.png" alt="99xlab" width="28" height="28" style="border-radius:6px"><div><b style="font-size:13px">Conversation</b><div class="sub" id="dwhen"></div></div>
     <button class="x" id="drawerX">×</button></div>
   <div class="db" id="drawerBody"></div>
 </aside>
@@ -644,7 +644,7 @@ function addChatMsg(role, content, meta = {}) {
   if (chatEmpty) chatEmpty.style.display = 'none';
   const div = document.createElement('div');
   div.className = `chat-msg ${role}`;
-  const avatar = role === 'user' ? 'KR' : '<img src="avatar-99xlab-ink.png" style="width:100%;height:100%;border-radius:50%">';
+  const avatar = role === 'user' ? 'KR' : '<img src="/web/avatar-99xlab-ink.png" style="width:100%;height:100%;border-radius:50%">';
   let citesHtml = '';
   if (meta.citations && meta.citations.length) {
     citesHtml = '<div class="cites">' + meta.citations.map(c =>
@@ -666,7 +666,7 @@ function addTyping() {
   const div = document.createElement('div');
   div.className = 'chat-msg bot';
   div.id = 'typing';
-  div.innerHTML = `<div class="avatar"><img src="avatar-99xlab-ink.png" style="width:100%;height:100%;border-radius:50%"></div><div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+  div.innerHTML = `<div class="avatar"><img src="/web/avatar-99xlab-ink.png" style="width:100%;height:100%;border-radius:50%"></div><div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
   chatMessages.appendChild(div);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }

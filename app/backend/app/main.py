@@ -153,6 +153,11 @@ def root():
     return FileResponse(os.path.join(WEB_DIR, "console.html"))
 
 
+@app.get("/favicon.ico")
+def favicon():
+    return FileResponse(os.path.join(WEB_DIR, "avatar-99xlab-ink.png"), media_type="image/png")
+
+
 @app.get("/widget")
 def widget():
     return FileResponse(os.path.join(WEB_DIR, "widget.html"))
