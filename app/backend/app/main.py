@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
+import logging
 import os
 
 from .db import init_db, get_db
@@ -28,7 +29,13 @@ WEB_DIR = os.environ.get("AVA_WEB_DIR") or os.path.join(os.path.dirname(os.path.
 
 @app.on_event("startup")
 def _startup():
-    init_db()
+    # Never let a DB hiccup take the whole app down (esp. on serverless cold
+    # starts before DATABASE_URL is configured) — DB-dependent routes will
+    # still surface their own errors when called.
+    try:
+        init_db()
+    except Exception:
+        logging.getLogger(__name__).exception("init_db() failed on startup")
 
 
 # ---------- health / config ----------
