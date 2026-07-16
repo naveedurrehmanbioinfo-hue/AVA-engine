@@ -80,6 +80,25 @@ async def upload(
     return {"id": src.id, "title": src.title, "n_chunks": src.n_chunks, "collection": src.collection}
 
 
+class UploadTextIn(BaseModel):
+    title: str
+    text: str
+    url: str | None = None
+    collection: str = "default"
+
+
+@app.post("/api/upload-text")
+def upload_text(body: UploadTextIn, db: Session = Depends(get_db)):
+    try:
+        src = ingestion.ingest_text(
+            db, title=body.title, text=body.text, origin="upload",
+            url=body.url, collection=body.collection,
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"id": src.id, "title": src.title, "url": src.url, "n_chunks": src.n_chunks, "collection": src.collection}
+
+
 class CrawlIn(BaseModel):
     url: str
     limit: int = 10

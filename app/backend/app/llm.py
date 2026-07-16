@@ -17,11 +17,18 @@ def client() -> OpenAI:
     return _client
 
 
+_EMBED_BATCH = 200  # keep well under OpenAI's 2048-input-per-request limit
+
+
 def embed(texts: list[str]) -> list[list[float]]:
     if not texts:
         return []
-    resp = client().embeddings.create(model=settings.embedding_model, input=texts)
-    return [d.embedding for d in resp.data]
+    vectors: list[list[float]] = []
+    for i in range(0, len(texts), _EMBED_BATCH):
+        batch = texts[i:i + _EMBED_BATCH]
+        resp = client().embeddings.create(model=settings.embedding_model, input=batch)
+        vectors.extend(d.embedding for d in resp.data)
+    return vectors
 
 
 def embed_one(text: str) -> list[float]:
