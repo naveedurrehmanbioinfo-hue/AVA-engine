@@ -30,8 +30,8 @@ class Settings(BaseSettings):
     embedding_dim: int = 1536
 
     # Retrieval / grounding knobs
-    retrieve_k: int = 8                 # candidates pulled per search arm
-    context_k: int = 5                  # chunks handed to the LLM
+    retrieve_k: int = 12                 # candidates pulled per search arm
+    context_k: int = 8                   # chunks handed to the LLM
     min_similarity: float = 0.25        # cosine floor; below this = no usable evidence -> refuse
     chunk_tokens: int = 400
     chunk_overlap: int = 60
