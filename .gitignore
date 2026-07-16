@@ -1,0 +1,20 @@
+# Secrets & local env — never commit
+.env
+.env.*
+!.env.example
+_runtime_secret.env
+*.key
+*.pem
+secrets/
+
+# Local WhatsApp voice notes / scratch media
+*.ogg
+*.opus
+*.m4a
+
+# Python / tooling
+__pycache__/
+*.pyc
+.venv/
+venv/
+node_modules/

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AVA — Ask</title>
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.55 -apple-system,Segoe UI,Roboto,sans-serif; background:#f6f7f9; color:#1a1d24; }
+  .wrap { max-width:560px; margin:0 auto; height:100vh; display:flex; flex-direction:column; }
+  .bar { padding:14px 18px; background:#fff; border-bottom:1px solid #e6e8ec; display:flex; align-items:center; gap:8px; }
+  .bar b { font-size:15px; }
+  .bar .ai { margin-left:auto; font-size:11px; color:#6b7280; background:#eef2ff; padding:2px 8px; border-radius:20px; }
+  .feed { flex:1; overflow-y:auto; padding:18px; display:flex; flex-direction:column; gap:12px; }
+  .msg { max-width:88%; padding:11px 14px; border-radius:14px; white-space:pre-wrap; }
+  .me { align-self:flex-end; background:#5b8cff; color:#fff; border-bottom-right-radius:4px; }
+  .ava { align-self:flex-start; background:#fff; border:1px solid #e6e8ec; border-bottom-left-radius:4px; }
+  .ava.refused { border-color:#e2c069; background:#fffbf0; }
+  .cites { margin-top:8px; }
+  .cite { display:inline-block; margin:4px 6px 0 0; font-size:12px; background:#eef2ff; border:1px solid #d7e0ff; border-radius:20px; padding:3px 9px; }
+  .cite a { color:#3355bb; text-decoration:none; }
+  .meta { font-size:11px; color:#8b93a1; margin-top:6px; }
+  .fb button { border:1px solid #e6e8ec; background:#fff; border-radius:6px; cursor:pointer; padding:2px 7px; margin-right:5px; }
+  .inp { padding:12px; background:#fff; border-top:1px solid #e6e8ec; display:flex; gap:8px; }
+  .inp input { flex:1; border:1px solid #d7dbe2; border-radius:22px; padding:11px 15px; font:inherit; outline:none; }
+  .inp button { border:none; background:#5b8cff; color:#fff; border-radius:22px; padding:0 18px; cursor:pointer; font:inherit; }
+  .inp button:disabled { opacity:.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar"><b>AVA</b><span class="ai">🤖 AI assistant — answers only from verified sources</span></div>
+  <div class="feed" id="feed">
+    <div class="msg ava">Hi! Ask me anything about the knowledge base. I answer only from verified sources — and I'll say so honestly if I don't have it.</div>
+  </div>
+  <div class="inp">
+    <input id="q" placeholder="Type your question…" autocomplete="off" />
+    <button id="send">Send</button>
+  </div>
+</div>
+<script>
+const API = location.origin;   // same-origin; change to your deployed API for cross-site embeds
+const feed = document.getElementById('feed'), q = document.getElementById('q'), send = document.getElementById('send');
+const esc = s => (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function bubble(cls, html){ const d=document.createElement('div'); d.className='msg '+cls; d.innerHTML=html; feed.appendChild(d); feed.scrollTop=feed.scrollHeight; return d; }
+
+async function ask(){
+  const text = q.value.trim(); if(!text) return;
+  bubble('me', esc(text)); q.value=''; send.disabled=true;
+  const thinking = bubble('ava', '<span style="opacity:.6">…</span>');
+  try{
+    const r = await fetch(API+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({query:text})}).then(x=>x.json());
+    let html = esc(r.answer || r.detail || 'Something went wrong.');
+    if (r.citations && r.citations.length){
+      html += '<div class="cites">'+r.citations.map(c =>
+        `<span class="cite">${c.url?`<a href="${c.url}" target="_blank">`:''}📎 ${esc(c.title||'source')}${c.url?'</a>':''}</span>`).join('')+'</div>';
+    }
+    if (r.caveat) html += `<div class="meta">⚠ ${esc(r.caveat)}</div>`;
+    html += `<div class="meta">${r.refused?'no verified answer':'grounded · conf '+(r.confidence||0).toFixed(2)}`;
+    if (r.conversation_id) html += ` · <span class="fb"><button onclick="fb('${r.conversation_id}','up',this)">👍</button><button onclick="fb('${r.conversation_id}','down',this)">👎</button></span>`;
+    html += '</div>';
+    thinking.className = 'msg ava' + (r.refused?' refused':'');
+    thinking.innerHTML = html;
+  }catch(e){ thinking.innerHTML = 'Network error: '+esc(String(e)); }
+  finally{ send.disabled=false; feed.scrollTop=feed.scrollHeight; }
+}
+window.fb = (id,v,btn) => { fetch(API+'/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({conversation_id:id,feedback:v})}); btn.parentElement.innerHTML = v==='up'?'thanks 👍':'noted 👎'; };
+send.onclick = ask; q.addEventListener('keydown', e => { if(e.key==='Enter') ask(); });
+</script>
+</body>
+</html>

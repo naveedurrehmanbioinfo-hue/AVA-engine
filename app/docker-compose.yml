@@ -1,0 +1,36 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ava
+      POSTGRES_PASSWORD: ava
+      POSTGRES_DB: ava
+    ports:
+      - "5433:5432"          # host 5433 -> container 5432 (5432 already used locally)
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ava -d ava"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: ./backend
+    env_file:
+      - ../.env               # OPENAI_API_KEY, SPIDER_CLOUD_API_KEY live here (gitignored)
+    environment:
+      DATABASE_URL: postgresql+psycopg://ava:ava@db:5432/ava
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend/app:/code/app        # live code reload for dev
+      - ./web:/code/web:ro
+      - ./sample_docs:/code/sample_docs:ro
+
+volumes:
+  pgdata:
