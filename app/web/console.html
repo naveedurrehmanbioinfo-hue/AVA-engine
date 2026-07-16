@@ -411,6 +411,10 @@ td .m{font-size:11px;color:var(--slate)}
                 <div class="stage" data-st="embed"><div class="b">3</div><div class="n">Embed</div></div>
                 <div class="stage" data-st="index"><div class="b">4</div><div class="n">Index</div></div>
               </div>
+              <div class="uploadbar" id="uploadbar" style="display:none;align-items:center;gap:10px;margin-top:12px">
+                <div class="bar" style="max-width:none"><i id="uploadbarfill" style="width:0%"></i></div>
+                <div class="mono" id="uploadbarlabel" style="font-size:11px;color:var(--slate);white-space:nowrap">0%</div>
+              </div>
             </div>
             <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">
               <div class="sub" style="margin-bottom:8px">Or crawl a website <span class="tag">spider.cloud</span></div>
@@ -608,19 +612,40 @@ drop.addEventListener('drop', e=>{e.preventDefault(); drop.style.background=''; 
 fileInput.addEventListener('change', ()=>{ if(fileInput.files[0]) doUpload(fileInput.files[0]); });
 
 function setStage(name, cls){ const el=document.querySelector('.stage[data-st="'+name+'"]'); el.classList.remove('run','done'); if(cls) el.classList.add(cls); }
+function setUploadProgress(pct, label){
+  const bar = $('#uploadbar');
+  bar.style.display = pct==null ? 'none' : 'flex';
+  if(pct!=null){ $('#uploadbarfill').style.width = pct+'%'; $('#uploadbarlabel').textContent = label; }
+}
 async function doUpload(f){
   $('#pipe').classList.add('on'); $('#pipefile').textContent = '📄 '+f.name;
   ['parse','chunk','embed','index'].forEach(s=>setStage(s,''));
+  setUploadProgress(null);
   setStage('parse','run');
   const fd = new FormData(); fd.append('file', f);
-  // animate first stages while the request runs
-  setTimeout(()=>{setStage('parse','done'); setStage('chunk','run');},350);
-  setTimeout(()=>{setStage('chunk','done'); setStage('embed','run');},750);
   try{
-    const r = await api('/api/upload',{method:'POST',body:fd});
-    if(r.detail){ toast('Upload failed: '+r.detail); setStage('embed',''); return; }
+    // phase 1: parse + chunk only — fast even for very large files, no embedding calls yet
+    const init = await api('/api/upload/init',{method:'POST',body:fd});
+    if(init.detail){ toast('Upload failed: '+init.detail); setStage('parse',''); return; }
+    setStage('parse','done'); setStage('chunk','done'); setStage('embed','run');
+
+    // phase 2: embed in small batches, driving a real progress bar
+    const total = init.n_chunks;
+    let embedded = 0;
+    if(total===0){
+      setUploadProgress(100,'0 chunks');
+    } else {
+      setUploadProgress(0, `0 / ${total} chunks`);
+      while(true){
+        const b = await api('/api/upload/embed-batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({source_id:init.id,batch_size:100})});
+        if(b.detail){ toast('Embedding failed: '+b.detail); setStage('embed',''); return; }
+        embedded = total - b.remaining;
+        setUploadProgress(Math.round(embedded/total*100), `${embedded} / ${total} chunks`);
+        if(b.done) break;
+      }
+    }
     setStage('embed','done'); setStage('index','run');
-    setTimeout(()=>{ setStage('index','done'); toast(`Indexed “${r.title}” → ${r.n_chunks} chunks`); loadSources(); loadHealth(); },400);
+    setTimeout(()=>{ setStage('index','done'); setUploadProgress(null); toast(`Indexed “${init.title}” → ${total} chunks`); loadSources(); loadHealth(); },300);
   }catch(e){ toast('Upload error: '+e); }
 }
 

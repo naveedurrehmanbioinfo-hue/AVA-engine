@@ -80,6 +80,37 @@ async def upload(
     return {"id": src.id, "title": src.title, "n_chunks": src.n_chunks, "collection": src.collection}
 
 
+@app.post("/api/upload/init")
+async def upload_init(
+    file: UploadFile = File(...),
+    collection: str = Form("default"),
+    db: Session = Depends(get_db),
+):
+    """Parse + chunk a file with no embedding calls, so this stays fast even
+    for very large files. Returns immediately with a source_id the client
+    then drives to completion via /api/upload/embed-batch, one small batch
+    at a time — that's what powers a real upload progress bar."""
+    data = await file.read()
+    try:
+        src = ingestion.start_ingest_file(db, filename=file.filename, data=data, collection=collection)
+    except RuntimeError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"id": src.id, "title": src.title, "n_chunks": src.n_chunks, "collection": src.collection, "status": src.status}
+
+
+class EmbedBatchIn(BaseModel):
+    source_id: str
+    batch_size: int = 100
+
+
+@app.post("/api/upload/embed-batch")
+def upload_embed_batch(body: EmbedBatchIn, db: Session = Depends(get_db)):
+    try:
+        return ingestion.embed_pending_batch(db, source_id=body.source_id, batch_size=body.batch_size)
+    except RuntimeError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
 class UploadTextIn(BaseModel):
     title: str
     text: str

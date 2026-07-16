@@ -66,7 +66,6 @@ def generate(query: str, hits: list[Hit]) -> tuple[dict, dict]:
 
     resp = llm.client().chat.completions.create(
         model=settings.chat_model,
-        temperature=0,
         response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": SYSTEM},
